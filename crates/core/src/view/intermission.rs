@@ -7,7 +7,7 @@ use super::{View, Event, Hub, Bus, Id, ID_FEEDER, RenderQueue};
 use crate::framebuffer::Framebuffer;
 use crate::settings::{IntermKind, LOGO_SPECIAL_PATH, COVER_SPECIAL_PATH};
 use crate::metadata::{SortMethod, BookQuery, sort};
-use crate::color::{TEXT_NORMAL, TEXT_INVERTED_HARD};
+use crate::color::{TEXT_NORMAL, TEXT_INVERTED_HARD, BLACK, WHITE};
 use crate::context::Context;
 
 pub struct Intermission {
@@ -102,6 +102,9 @@ impl View for Intermission {
                 fb.draw_blended_pixmap(&pixmap, pt, scheme[1]);
             },
             Message::Image(ref path) => {
+                let bg_color = if fb.inverted() { WHITE } else { BLACK };
+                fb.draw_rectangle(&self.rect, bg_color);
+
                 if let Some(mut doc) = open(path) {
                     if let Some((width, height)) = doc.dims(0) {
                         let w_ratio = self.rect.width() as f32 / width;
@@ -123,6 +126,9 @@ impl View for Intermission {
                 }
             },
             Message::Cover(ref path) => {
+                let bg_color = if fb.inverted() { WHITE } else { BLACK };
+                fb.draw_rectangle(&self.rect, bg_color);
+
                 if let Some(mut doc) = open(path) {
                     if let Some(pixmap) = doc.preview_pixmap(self.rect.width() as f32,
                                                              self.rect.height() as f32,
