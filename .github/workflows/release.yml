@@ -1,0 +1,48 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf wget curl git pkg-config unzip jq patchelf
+
+      - name: Install rust toolchain
+        run: |
+          rustup target add arm-unknown-linux-gnueabihf
+
+      - name: Build and Dist
+        run: |
+          ./build.sh fast
+          ./dist.sh
+
+      - name: Create Archive
+        run: |
+          tar -czvf plato.tar.gz dist/
+
+      - name: Generate Version Number
+        id: version
+        run: |
+          VERSION="0.9.$(date +'%Y.%m.%d.%H%M%S')"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v$VERSION" \
+            --title "Release $VERSION" \
+            --notes "Automated release $VERSION" \
+            plato.tar.gz
