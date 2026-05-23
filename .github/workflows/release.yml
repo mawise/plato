@@ -19,7 +19,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf wget curl git pkg-config unzip jq patchelf
+          sudo apt-get install -y wget curl git pkg-config unzip jq patchelf
 
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
