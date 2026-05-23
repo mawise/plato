@@ -1,31 +1,67 @@
-name: Build and Release
+name: Build Plato for Kobo
 
 on:
   push:
-    branches:
-      - master
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf wget curl git pkg-config unzip jq patchelf
+          sudo apt-get install -y wget curl git pkg-config unzip jq patchelf
 
-      - name: Install rust toolchain
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: arm-unknown-linux-gnueabihf
+
+      - name: Set up Python (for gdown)
+        uses: actions/setup-python@v5
+        with:
+          python-module-cache: true
+
+      - name: Install gdown & Download Kobo Toolchain
         run: |
-          rustup target add arm-unknown-linux-gnueabihf
+          pip install gdown
+          # Note: Replace the ID below if the Google Drive link changes.
+          # This ID maps to the specific shared archive folder/file.
+          # Alternatively, host the toolchain tarball on a public GitHub Release for a cleaner curl download.
+          gdown --folder https://drive.google.com/drive/folders/1YT6x2X070-cg_E8iWvNUUrWg5-t_YcV0
+        
+          # Assuming it downloads a folder or zip, extract it:
+          mkdir -p $HOME/kobo-toolchain
+          tar -xf "/home/runner/work/plato/plato/Kobo Toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz" -C $HOME/kobo-toolchain
 
-      - name: Build and Dist
+      - name: Verify Toolchain Extraction
+        run: |
+          ls -la $HOME/kobo-toolchain
+          
+      - name: Add Toolchain to Path
+        run: |
+          # Adjust the path suffix depending on how the toolchain folder structure looks inside the zip
+          echo "$HOME/kobo-toolchain/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/bin" >> $GITHUB_PATH
+
+      - name: Verify Toolchain Binaries
+        run: |
+          ls -la $HOME/kobo-toolchain/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/bin
+
+      - name: Run Build Script
         run: |
           ./build.sh fast
+
+      - name: Run Distribution Script
+        run: |
           ./dist.sh
 
       - name: Create Archive
@@ -35,8 +71,8 @@ jobs:
       - name: Generate Version Number
         id: version
         run: |
-          VERSION="0.9.$(date +'%Y.%m.%d.%H%M%S')"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+            VERSION="0.9.$(date +'%Y.%m.%d.%H%M%S')"
+            echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Create Release
         env:
