@@ -9,68 +9,68 @@ on:
 
 jobs:
   build:
-  runs-on: ubuntu-24.04
-  permissions:
-    contents: write
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf wget curl git pkg-config unzip jq patchelf
+       - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf wget curl git pkg-config unzip jq patchelf
 
-    - name: Install Rust Toolchain
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: arm-unknown-linux-gnueabihf
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: arm-unknown-linux-gnueabihf
 
-    - name: Set up Python (for gdown)
-      uses: actions/setup-python@v5
-      with:
-        python-module-cache: true
+      - name: Set up Python (for gdown)
+        uses: actions/setup-python@v5
+        with:
+          python-module-cache: true
 
-    - name: Install gdown & Download Kobo Toolchain
-      run: |
-        pip install gdown
-        # Note: Replace the ID below if the Google Drive link changes.
-        # This ID maps to the specific shared archive folder/file.
-        # Alternatively, host the toolchain tarball on a public GitHub Release for a cleaner curl download.
-        gdown --folder https://drive.google.com/drive/folders/1YT6x2X070-cg_E8iWvNUUrWg5-t_YcV0
+      - name: Install gdown & Download Kobo Toolchain
+        run: |
+          pip install gdown
+          # Note: Replace the ID below if the Google Drive link changes.
+          # This ID maps to the specific shared archive folder/file.
+          # Alternatively, host the toolchain tarball on a public GitHub Release for a cleaner curl download.
+          gdown --folder https://drive.google.com/drive/folders/1YT6x2X070-cg_E8iWvNUUrWg5-t_YcV0
         
-        # Assuming it downloads a folder or zip, extract it:
-        mkdir -p $HOME/kobo-toolchain
-        tar -xf *.tar.xz -C $HOME/kobo-toolchain || unzip *.zip -d $HOME/kobo-toolchain || true
+          # Assuming it downloads a folder or zip, extract it:
+          mkdir -p $HOME/kobo-toolchain
+          tar -xf *.tar.xz -C $HOME/kobo-toolchain || unzip *.zip -d $HOME/kobo-toolchain || true
 
-    - name: Add Toolchain to Path
-      run: |
-        # Adjust the path suffix depending on how the toolchain folder structure looks inside the zip
-        echo "$HOME/kobo-toolchain/bin" >> $GITHUB_PATH
+      - name: Add Toolchain to Path
+        run: |
+          # Adjust the path suffix depending on how the toolchain folder structure looks inside the zip
+          echo "$HOME/kobo-toolchain/bin" >> $GITHUB_PATH
 
-    - name: Run Build Script
-      run: |
-        ./build.sh fast
+      - name: Run Build Script
+        run: |
+          ./build.sh fast
 
-    - name: Run Distribution Script
-      run: |
-        ./dist.sh
+      - name: Run Distribution Script
+        run: |
+          ./dist.sh
 
-    - name: Create Archive
-     run: |
+      - name: Create Archive
+        run: |
           tar -czvf plato.tar.gz dist/
 
-    - name: Generate Version Number
-      id: version
-      run: |
-          VERSION="0.9.$(date +'%Y.%m.%d.%H%M%S')"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Generate Version Number
+        id: version
+        run: |
+            VERSION="0.9.$(date +'%Y.%m.%d.%H%M%S')"
+            echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-    - name: Create Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           gh release create "v$VERSION" \
             --title "Release $VERSION" \
             --notes "Automated release $VERSION" \
