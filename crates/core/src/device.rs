@@ -272,6 +272,11 @@ impl Device {
                  Model::AuraONE | Model::AuraONELimEd)
     }
 
+    pub fn is_mediatek(&self) -> bool {
+        matches!(self.model,
+                 Model::ClaraBW | Model::ClaraColour | Model::LibraColour)
+    }
+
     pub fn has_gyroscope(&self) -> bool {
         matches!(self.model,
                  Model::Forma | Model::Forma32GB | Model::LibraH2O | Model::Elipsa |

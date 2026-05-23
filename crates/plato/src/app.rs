@@ -593,14 +593,32 @@ pub fn run() -> Result<(), Error> {
                 }
                 let before = Local::now();
                 println!("{}", before.format("Went to sleep on %B %-d, %Y at %H:%M:%S."));
-                Command::new("scripts/suspend.sh")
-                        .status()
-                        .ok();
+                if CURRENT_DEVICE.is_mediatek() {
+                    if context.plugged {
+                        println!("Kobo suspend: skipping the suspend request for now: device is plugged in and would otherwise crash!");
+                        inactive_since = Instant::now();
+                        schedule_task(TaskId::Suspend, Event::Suspend,
+                                      SUSPEND_WAIT_DELAY, &tx, &mut tasks);
+                        continue;
+                    }
+                    std::fs::write("/sys/power/state-extended", "1").unwrap_or_else(|e| eprintln!("Can't write to state-extended: {:#}.", e));
+                    thread::sleep(std::time::Duration::from_secs(2));
+                    Command::new("sync").status().ok();
+                    std::fs::write("/sys/power/state", "mem").unwrap_or_else(|e| eprintln!("Can't write to state: {:#}.", e));
+                } else {
+                    Command::new("scripts/suspend.sh")
+                            .status()
+                            .ok();
+                }
                 let after = Local::now();
                 println!("{}", after.format("Woke up on %B %-d, %Y at %H:%M:%S."));
-                Command::new("scripts/resume.sh")
-                        .status()
-                        .ok();
+                if CURRENT_DEVICE.is_mediatek() {
+                    std::fs::write("/sys/power/state-extended", "0").unwrap_or_else(|e| eprintln!("Can't write to state-extended: {:#}.", e));
+                } else {
+                    Command::new("scripts/resume.sh")
+                            .status()
+                            .ok();
+                }
                 inactive_since = Instant::now();
                 // If the wake is legitimate, the task will be cancelled by `resume`.
                 schedule_task(TaskId::Suspend, Event::Suspend,
