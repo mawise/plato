@@ -43,6 +43,10 @@ jobs:
           mkdir -p $HOME/kobo-toolchain
           tar -xf *.tar.xz -C $HOME/kobo-toolchain || unzip *.zip -d $HOME/kobo-toolchain || true
 
+      - name: Verify Toolchain Extraction
+        run: |
+          ls -la $HOME/kobo-toolchain
+          
       - name: Add Toolchain to Path
         run: |
           # Adjust the path suffix depending on how the toolchain folder structure looks inside the zip
