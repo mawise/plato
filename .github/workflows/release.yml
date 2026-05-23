@@ -41,7 +41,7 @@ jobs:
         
           # Assuming it downloads a folder or zip, extract it:
           mkdir -p $HOME/kobo-toolchain
-          tar -xf /home/runner/work/plato/plato/Kobo Toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz -C $HOME/kobo-toolchain
+          tar -xf "/home/runner/work/plato/plato/Kobo Toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz" -C $HOME/kobo-toolchain
 
       - name: Verify Toolchain Extraction
         run: |
